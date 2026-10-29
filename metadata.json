@@ -1,0 +1,6 @@
+{
+  "name": "ASTRA — Space Data Reconstruction",
+  "description": "Multimodal Generative AI for Space Data Reconstruction running entirely in the browser.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
