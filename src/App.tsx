@@ -6,9 +6,12 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { AboutSection } from './components/AboutSection';
+import { ModulesOverview } from './components/ModulesOverview';
 import { ReconstructSection } from './components/ReconstructSection';
 import { ReportSection } from './components/ReportSection';
 import { HistorySection } from './components/HistorySection';
+import { Footer } from './components/Footer';
 import { ReconstructionReport, HistoryItem } from './types';
 import { getAllHistory, saveHistoryItem } from './utils/db';
 
@@ -63,6 +66,12 @@ export default function App() {
         {/* Hero with Earth Globe */}
         <Hero />
 
+        {/* Engineering Overview: About Our Project */}
+        <AboutSection />
+
+        {/* Modules Overview: 4 Architectural Pillars with Quick-jump buttons */}
+        <ModulesOverview />
+
         {/* 2x2 Reconstruct Grid (Image, Video, Audio, Text) */}
         <ReconstructSection onReconstructionComplete={handleReconstructionComplete} />
 
@@ -77,13 +86,8 @@ export default function App() {
         />
       </main>
 
-      {/* Quiet Footer */}
-      <footer className="w-full border-t border-slate-900 py-8 px-4 text-center text-xs text-slate-500 font-mono">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>ASTRA · Multimodal Space Data Reconstruction</p>
-          <p className="text-slate-600">All neural models and DSP pipelines execute client-side in browser.</p>
-        </div>
-      </footer>
+      {/* Engineering Project Footer with Team Member Credits */}
+      <Footer />
     </div>
   );
 }

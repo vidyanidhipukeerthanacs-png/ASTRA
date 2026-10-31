@@ -149,7 +149,165 @@ export function generateSampleDamagedAudio(): { blob: Blob; fileName: string } {
 }
 
 /**
- * Sample corrupted space transmission text
+ * Creates a sample damaged space video WebM Blob (lunar orbiter telemetry with dropouts)
  */
-export const SAMPLE_CORRUPTED_TEXT =
-  'Voyager 1 deep ____ carrier s?gn@l detected on subcarrier 32. All spacecraft systems nominal. Downlink tel@metry locked on X-band. High gain antenna ____ calibrated. Solar flare r@diation flux within acceptable margins for deep space tra- .';
+export async function generateSampleDamagedVideoBlob(): Promise<{ blob: Blob; fileName: string }> {
+  const width = 512;
+  const height = 384;
+  const fps = 8;
+  const totalFrames = 24; // 3.0 seconds
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+
+  const mimeType =
+    typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+      ? 'video/webm;codecs=vp8'
+      : typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm')
+      ? 'video/webm'
+      : 'video/mp4';
+
+  const stream = canvas.captureStream(fps);
+  const recorder = new MediaRecorder(stream, { mimeType });
+  const chunks: Blob[] = [];
+
+  recorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) chunks.push(e.data);
+  };
+
+  const recordingPromise = new Promise<Blob>((resolve, reject) => {
+    recorder.onstop = () => {
+      if (chunks.length > 0) {
+        resolve(new Blob(chunks, { type: mimeType }));
+      } else {
+        reject(new Error('MediaRecorder generated empty chunks.'));
+      }
+    };
+    recorder.onerror = (err) => reject(err);
+  });
+
+  recorder.start(100);
+
+  for (let frame = 0; frame < totalFrames; frame++) {
+    // 1. Deep space background with subtle nebula
+    ctx.fillStyle = '#050914';
+    ctx.fillRect(0, 0, width, height);
+
+    // Nebula glow
+    const grad = ctx.createRadialGradient(width * 0.4, height * 0.45, 10, width * 0.4, height * 0.45, 200);
+    grad.addColorStop(0, 'rgba(14, 165, 233, 0.12)');
+    grad.addColorStop(0.6, 'rgba(99, 102, 241, 0.08)');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // 2. Stars
+    for (let s = 0; s < 50; s++) {
+      const sx = (s * 73 + frame * 0.5) % width;
+      const sy = (s * 47) % height;
+      ctx.fillStyle = s % 4 === 0 ? 'rgba(56, 189, 248, 0.85)' : 'rgba(241, 245, 249, 0.7)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, (s % 3) * 0.5 + 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. Lunar sphere / celestial body (drifting slightly with camera motion)
+    const moonX = width * 0.5 + Math.sin(frame * 0.15) * 16;
+    const moonY = height * 0.52;
+    const moonR = 85;
+
+    const moonGrad = ctx.createRadialGradient(moonX - 25, moonY - 25, 5, moonX, moonY, moonR);
+    moonGrad.addColorStop(0, '#e2e8f0');
+    moonGrad.addColorStop(0.5, '#94a3b8');
+    moonGrad.addColorStop(0.85, '#475569');
+    moonGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = moonGrad;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Lunar craters
+    const craters = [
+      { dx: -20, dy: -15, r: 14 },
+      { dx: 25, dy: 10, r: 18 },
+      { dx: -5, dy: 30, r: 10 },
+      { dx: 35, dy: -25, r: 12 },
+    ];
+    for (const c of craters) {
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.65)';
+      ctx.beginPath();
+      ctx.arc(moonX + c.dx, moonY + c.dy, c.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.beginPath();
+      ctx.arc(moonX + c.dx - 2, moonY + c.dy - 2, c.r * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Orbiting satellite with solar wings
+    const satX = width * 0.2 + (frame / totalFrames) * (width * 0.6);
+    const satY = height * 0.32 + Math.cos(frame * 0.3) * 14;
+
+    // Body
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(satX - 6, satY - 6, 12, 12);
+    // Solar panels
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(satX - 24, satY - 4, 15, 8);
+    ctx.fillRect(satX + 9, satY - 4, 15, 8);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(satX - 24, satY - 4, 15, 8);
+    ctx.strokeRect(satX + 9, satY - 4, 15, 8);
+
+    // 5. INJECT AUTHENTIC CORRUPTION DAMAGE:
+    // Sensor telemetry dropout block on lunar surface across frames 5 to 19
+    if (frame >= 5 && frame <= 19) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(Math.round(width * 0.42), Math.round(height * 0.44), 62, 50);
+    }
+
+    // Horizontal telemetry scanline dropout across frames 8 to 15
+    if (frame >= 8 && frame <= 15) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(Math.round(width * 0.15), Math.round(height * 0.68), Math.round(width * 0.7), 4);
+    }
+
+    // White telemetry saturation spike in frame 11-13
+    if (frame >= 11 && frame <= 13) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(Math.round(width * 0.62), Math.round(height * 0.28), 35, 4);
+    }
+
+    // Frame delay for MediaRecorder capture
+    await new Promise((r) => setTimeout(r, 1000 / fps));
+  }
+
+  // Allow extra buffer for recorder to finalize
+  await new Promise((r) => setTimeout(r, 300));
+  recorder.stop();
+
+  const blob = await recordingPromise;
+  return { blob, fileName: 'lunar_orbiter_feed.webm' };
+}
+
+/**
+ * Sample corrupted space transmission text (multi-paragraph flight log with telemetry gaps)
+ */
+export const SAMPLE_CORRUPTED_TEXT = `MISSION TELEMETRY LOG: VOYAGER-1 DEEP SPACE PROBE
+Segment ID: TR-8924 // Subcarrier: 32 // Band: X-Band Downlink
+
+Voyager 1 deep ____ carrier s?gn@l detected on subcarrier 32. All spacecraft systems nominal. Downlink tel@metry locked on X-band receiver. High gain antenna ____ calibrated for ground station acquisition. Solar flare r@diation flux within acceptable margins for deep space tra- .
+
+FLIGHT SUBSYSTEM TELEMETRY:
+- Main bus voltage: ___ V
+- RTG thermocouple temp: ___ K
+- Thruster propellant pressure: ___ psi
+- Doppler velocity shift: ___ km/s
+
+Observational notes: Deep space observatory detected ____ cosmic emission along interstellar boundary coordinates. Ground controllers initiated telemetry calibration sequence.`;
+

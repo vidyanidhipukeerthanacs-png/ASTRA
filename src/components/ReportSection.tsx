@@ -9,6 +9,34 @@ interface ReportSectionProps {
 export const ReportSection: React.FC<ReportSectionProps> = ({ latestReport }) => {
   const downloadReportFile = () => {
     if (!latestReport) return;
+    let extraReportText = '';
+    if (latestReport.videoMetrics) {
+      extraReportText += `\n## 4. Video Telemetry & Quality Metrics
+- PSNR (Peak Signal-to-Noise Ratio): ${latestReport.videoMetrics.psnrDb} dB
+- SSIM (Structural Similarity Index): ${latestReport.videoMetrics.ssim}
+- Temporal Continuity: ${latestReport.videoMetrics.temporalContinuity}%
+`;
+    }
+    if (latestReport.audioMetrics) {
+      extraReportText += `\n## 4. Audio Restoration Telemetry
+- Initial SNR: ${latestReport.audioMetrics.initialSnrDb} dB
+- Restored SNR: ${latestReport.audioMetrics.restoredSnrDb} dB (+${latestReport.audioMetrics.snrGainDb} dB gain)
+- Total Harmonic Distortion (THD): ${latestReport.audioMetrics.thdPercent}%
+- Spectral Flatness Measure: ${latestReport.audioMetrics.spectralFlatness}
+- Click Transients Removed: ${latestReport.audioMetrics.clicksRemoved}
+- Silent Dropouts Interpolated: ${latestReport.audioMetrics.dropoutsInterpolated}
+- Power Line Hum Attenuated: ${latestReport.audioMetrics.humAttenuatedDb} dB
+- Pristine Input Status: ${latestReport.audioMetrics.isCleanSignal ? 'Yes (Clean signal preserved)' : 'Restored'}
+`;
+    }
+    if (latestReport.textItems && latestReport.textItems.length > 0) {
+      extraReportText += `\n## 4. Text Restoration Telemetry (${latestReport.textItems.length} parsed items)
+- Missing Empirical Measurements designated [Unknown value]: ${latestReport.textItems.filter((i) => i.status === 'unknown_value').length}
+- Reconstructed Domain Vocabulary Words: ${latestReport.textItems.filter((i) => i.status === 'restored').length}
+- Ambiguous Gaps flagged [Uncertain]: ${latestReport.textItems.filter((i) => i.status === 'uncertain').length}
+`;
+    }
+
     const reportContent = `# ASTRA Space Data Reconstruction Report
 Generated: ${new Date(latestReport.timestamp).toISOString()}
 ID: ${latestReport.id}
@@ -26,8 +54,8 @@ ${latestReport.damagedAreaPercent !== undefined ? `- Damaged Area Ratio: ${lates
 - Result: ${latestReport.reconstructionSummary}
 - Method: ${latestReport.methodUsed}
 - Measured Execution Time: ${latestReport.measuredTimeMs} ms
-
-## 4. Integrity Notice
+${extraReportText}
+## 5. Integrity & Scientific Disclaimer
 ${latestReport.disclaimer}
 `;
 
@@ -126,6 +154,93 @@ ${latestReport.disclaimer}
               </p>
             </div>
           </div>
+
+          {/* Video Metrics Card if Available */}
+          {latestReport.videoMetrics && (
+            <div className="pt-4 border-t border-slate-800/80">
+              <span className="text-xs font-medium text-slate-400 block mb-2">Video Verification Telemetry</span>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">PSNR Fidelity</span>
+                  <span className="text-cyan-300 font-mono font-bold">{latestReport.videoMetrics.psnrDb} dB</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">SSIM Index</span>
+                  <span className="text-cyan-300 font-mono font-bold">{latestReport.videoMetrics.ssim}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">Temporal Continuity</span>
+                  <span className="text-cyan-300 font-mono font-bold">{latestReport.videoMetrics.temporalContinuity}%</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Audio Metrics Card if Available */}
+          {latestReport.audioMetrics && (
+            <div className="pt-4 border-t border-slate-800/80">
+              <span className="text-xs font-medium text-slate-400 block mb-2">Audio Restoration Telemetry</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">SNR Gain</span>
+                  <span className="text-cyan-300 font-mono font-bold">
+                    +{latestReport.audioMetrics.snrGainDb} dB
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-mono">
+                    ({latestReport.audioMetrics.initialSnrDb} → {latestReport.audioMetrics.restoredSnrDb} dB)
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">THD Distortion</span>
+                  <span className="text-cyan-300 font-mono font-bold">{latestReport.audioMetrics.thdPercent}%</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">Harmonic</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">Spectral Flatness</span>
+                  <span className="text-cyan-300 font-mono font-bold">{latestReport.audioMetrics.spectralFlatness}</span>
+                  <span className="text-[10px] text-slate-400 block font-mono">SFM Index</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block font-mono">Glitches Repaired</span>
+                  <span className="text-cyan-300 font-mono font-bold">
+                    {latestReport.audioMetrics.clicksRemoved + latestReport.audioMetrics.dropoutsInterpolated}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-mono">
+                    {latestReport.audioMetrics.isCleanSignal ? 'Pristine Input' : 'Restored'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Text Items Summary if Available */}
+          {latestReport.textItems && latestReport.textItems.length > 0 && (
+            <div className="pt-4 border-t border-slate-800/80">
+              <span className="text-xs font-medium text-slate-400 block mb-2">
+                Text Restoration Integrity ({latestReport.textItems.length} tokens parsed)
+              </span>
+              <div className="p-3 rounded-xl bg-black/40 border border-slate-800 text-xs space-y-1.5 font-mono">
+                <div className="flex justify-between text-slate-400 text-[11px]">
+                  <span>Empirical measurements designated [Unknown value]:</span>
+                  <span className="text-amber-400 font-bold">
+                    {latestReport.textItems.filter((i) => i.status === 'unknown_value').length}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-400 text-[11px]">
+                  <span>Restored domain words:</span>
+                  <span className="text-cyan-400 font-bold">
+                    {latestReport.textItems.filter((i) => i.status === 'restored').length}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-400 text-[11px]">
+                  <span>Ambiguous tokens flagged [Uncertain]:</span>
+                  <span className="text-purple-400 font-bold">
+                    {latestReport.textItems.filter((i) => i.status === 'uncertain').length}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Mandatory Honesty Disclaimer */}
           <div className="pt-4 border-t border-slate-800/80">

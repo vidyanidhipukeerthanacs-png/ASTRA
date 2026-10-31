@@ -34,5 +34,5 @@ test('reconstructTextLocal processes full transmission log with highlight tokens
   assert.ok(result.reconstructedText.includes('space'));
   assert.ok(result.reconstructedText.includes('signal'));
   assert.ok(result.reconstructedText.includes('telemetry'));
-  assert.equal(result.tokens.filter(t => t.isCorrupted).length, 3);
+  assert.equal(result.tokens.filter((t: any) => t.isCorrupted).length, 3);
 });

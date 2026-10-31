@@ -15,8 +15,20 @@ export const Navbar: React.FC = () => {
           </span>
         </a>
 
-        {/* 3 Nav Links */}
-        <nav className="flex items-center gap-6 sm:gap-8 text-sm font-medium text-slate-300">
+        {/* Nav Links */}
+        <nav className="flex items-center gap-4 sm:gap-7 text-xs sm:text-sm font-medium text-slate-300">
+          <a
+            href="#about"
+            className="hover:text-cyan-400 transition-colors whitespace-nowrap"
+          >
+            About
+          </a>
+          <a
+            href="#modules"
+            className="hover:text-cyan-400 transition-colors whitespace-nowrap"
+          >
+            Modules
+          </a>
           <a
             href="#reconstruct"
             className="hover:text-cyan-400 transition-colors whitespace-nowrap"
